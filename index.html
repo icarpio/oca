@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>El Juego de la OCA</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --parchment: #f4e4bc;
+    --parchment-dark: #e0c98a;
+    --brown-deep: #3e2308;
+    --brown-mid: #7a4a1a;
+    --brown-light: #b07d3a;
+    --red-tile: #8b1a1a;
+    --green-tile: #1a5c2a;
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+  }
+
+  html, body {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: var(--brown-deep);
+    font-family: 'Crimson Pro', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    padding: 80px 16px 32px; /* espacio para la oca arriba + padding lateral */
+  }
+
+  /* ─── Fondo con textura de tablero ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(201,168,76,0.08) 60px),
+      repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(201,168,76,0.08) 60px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 40%, rgba(62,35,8,0) 30%, rgba(10,5,2,0.7) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── Marco principal ─── */
+  .frame {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+    background: var(--parchment);
+    border: 6px double var(--brown-mid);
+    border-radius: 4px;
+    padding: 3rem 1.4rem 2rem;
+    box-shadow:
+      0 0 0 2px var(--gold),
+      0 0 0 8px var(--brown-deep),
+      0 0 0 10px var(--gold),
+      0 20px 60px rgba(0,0,0,0.7);
+    text-align: center;
+    overflow: visible;
+  }
+  @media (min-width: 480px) {
+    .frame { padding: 3rem 2.5rem 2.5rem; }
+  }
+
+  /* Esquinas decorativas */
+  .frame::before, .frame::after {
+    content: '✦';
+    position: absolute;
+    font-size: 1.1rem;
+    color: var(--gold);
+    z-index: 2;
+  }
+  .frame::before { top: 10px; left: 14px; }
+  .frame::after  { top: 10px; right: 14px; }
+
+  .corner-br, .corner-bl {
+    position: absolute;
+    font-size: 1.1rem;
+    color: var(--gold);
+    z-index: 2;
+  }
+  .corner-br { bottom: 10px; right: 14px; }
+  .corner-bl { bottom: 10px; left: 14px; }
+
+  /* ─── Oca decorativa arriba ─── */
+  .goose-decoration {
+    position: absolute;
+    top: -48px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 3.8rem;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    animation: bob 3s ease-in-out infinite;
+    line-height: 1;
+    user-select: none;
+  }
+  @media (min-width: 480px) {
+    .goose-decoration { font-size: 5rem; top: -54px; }
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-8px); }
+  }
+
+  /* ─── Separadores ornamentales ─── */
+  .ornament {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0.8rem 0;
+    color: var(--brown-mid);
+  }
+  .ornament::before, .ornament::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--brown-light), transparent);
+  }
+  .ornament span { font-size: 1rem; color: var(--gold); }
+
+  /* ─── Título ─── */
+  .label-top {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brown-mid);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', cursive;
+    font-weight: 900;
+    font-size: clamp(1.6rem, 7vw, 2.8rem);
+    line-height: 1.2;
+    color: var(--brown-deep);
+    text-shadow: 2px 2px 0 rgba(201,168,76,0.4);
+    letter-spacing: 0.02em;
+  }
+
+  h1 span {
+    color: var(--red-tile);
+  }
+
+  /* ─── Dados decorativos ─── */
+  .dice-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin: 1rem 0;
+  }
+
+  .die {
+    width: 42px;
+    height: 42px;
+    background: white;
+    border: 2px solid var(--brown-mid);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    box-shadow: 3px 3px 0 var(--brown-mid);
+    animation: spin-in 0.6s ease-out both;
+  }
+
+  .die:nth-child(1) { animation-delay: 0.1s; transform: rotate(-8deg); }
+  .die:nth-child(2) { animation-delay: 0.2s; transform: rotate(5deg); }
+  .die:nth-child(3) { animation-delay: 0.3s; transform: rotate(-3deg); }
+
+  @keyframes spin-in {
+    from { opacity: 0; transform: scale(0) rotate(45deg); }
+    to   { opacity: 1; }
+  }
+
+  /* ─── Descripción ─── */
+  .description {
+    font-size: 0.95rem;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--brown-deep);
+    margin: 0.5rem 0 1rem;
+  }
+  @media (min-width: 480px) {
+    .description { font-size: 1.05rem; margin: 0.5rem 0 1.2rem; }
+  }
+
+  /* ─── Ficha de jugadores ─── */
+  .players-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 0.4rem 0 1.4rem;
+  }
+  .player-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-family: 'Cinzel Decorative', cursive;
+    color: var(--brown-mid);
+    font-weight: 400;
+  }
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--brown-mid);
+    flex-shrink: 0;
+  }
+  .dot-red    { background: #dc2626; }
+  .dot-blue   { background: #2563eb; }
+  .dot-yellow { background: #ca8a04; }
+
+  /* ─── Botón ─── */
+  .btn-play {
+    display: inline-block;
+    font-family: 'Cinzel Decorative', cursive;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--parchment);
+    background: linear-gradient(160deg, var(--red-tile), #5a0e0e);
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: 2px;
+    box-shadow:
+      0 6px 0 #400808,
+      0 8px 20px rgba(0,0,0,0.4);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.12s, box-shadow 0.12s;
+    margin-top: 0.3rem;
+    max-width: 100%;
+  }
+  @media (min-width: 480px) {
+    .btn-play { font-size: 1rem; padding: 1rem 3rem; }
+  }
+
+  .btn-play::before {
+    content: '🎲';
+    margin-right: 0.6rem;
+    font-size: 1.1rem;
+  }
+  .btn-play::after {
+    content: '🎲';
+    margin-left: 0.6rem;
+    font-size: 1.1rem;
+  }
+
+  .btn-play:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #400808, 0 12px 30px rgba(0,0,0,0.4);
+  }
+
+  .btn-play:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #400808, 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* ─── Reglas mini ─── */
+  .rules-mini {
+    margin-top: 1.2rem;
+    background: rgba(62,35,8,0.06);
+    border: 1px solid rgba(62,35,8,0.15);
+    border-radius: 2px;
+    padding: 0.8rem 0.6rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.4rem;
+    text-align: center;
+  }
+
+  .rule-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .rule-icon { font-size: 1.3rem; }
+  .rule-text {
+    font-size: 0.72rem;
+    line-height: 1.3;
+    color: var(--brown-mid);
+    font-style: italic;
+  }
+
+  /* ─── Footer mínimo ─── */
+  .small-note {
+    margin-top: 1.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--brown-light);
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <span class="corner-br">✦</span>
+  <span class="corner-bl">✦</span>
+
+  <div class="goose-decoration">🦢</div>
+
+  <p class="label-top">Juego de Mesa Clásico</p>
+
+  <h1>El Juego<br>de la <span>OCA</span></h1>
+
+  <div class="dice-row">
+    <div class="die">⚀</div>
+    <div class="die">⚄</div>
+    <div class="die">⚂</div>
+  </div>
+
+  <p class="description">
+    Recorre las 63 casillas del tablero,<br>
+    esquiva el pozo, el laberinto y la muerte.<br>
+    ¡Sé el primero en llegar a la meta!
+  </p>
+
+
+  <a href="game.html" class="btn-play">¡Jugar!</a>
+
+
+  <p class="small-note">Edición digital</p>
+</div>
+
+</body>
+</html>
